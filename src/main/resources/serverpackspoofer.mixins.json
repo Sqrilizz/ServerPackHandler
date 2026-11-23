@@ -1,0 +1,11 @@
+{
+  "required": true,
+  "package": "me.sqrilizz.serverpackspoof.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "MixinClientCommonPacketListenerImpl"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

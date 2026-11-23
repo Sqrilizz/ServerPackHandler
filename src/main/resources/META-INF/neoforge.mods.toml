@@ -1,0 +1,26 @@
+modLoader = "lowcodefml"
+loaderVersion = "[1,)"
+license = "MIT"
+
+[[mods]]
+modId = "serverpackspoofer"
+version = "1.0.0"
+displayName = "ServerPackSpoofer"
+authors = "Sqrilizz"
+description = "Bypasses server-enforced resource packs by spoofing ACCEPTED and SUCCESSFULLY_LOADED packets without downloading or reloading."
+
+[[mixins]]
+config = "serverpackspoofer.mixins.json"
+
+[[dependencies.serverpackspoofer]]
+modId = "neoforge"
+mandatory = false
+versionRange = "[1,)"
+ordering = "NONE"
+side = "CLIENT"
+
+[[dependencies.serverpackspoofer]]
+modId = "minecraft"
+mandatory = false
+ordering = "NONE"
+side = "CLIENT"

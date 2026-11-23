@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "serverpackspoofer",
+  "version": "1.0.0",
+  "name": "ServerPackSpoofer",
+  "description": "Bypasses server-enforced resource packs by spoofing ACCEPTED and SUCCESSFULLY_LOADED packets without downloading or reloading.",
+  "authors": [
+    "Sqrilizz"
+  ],
+  "license": "MIT",
+  "environment": "client",
+  "mixins": [
+    "serverpackspoofer.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": ">=1.21"
+  }
+}
