@@ -18,6 +18,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -58,12 +59,24 @@ public abstract class MixinClientCommonPacketListenerImpl {
             return;
         }
 
-        send(new ServerboundResourcePackPacket(id, ServerboundResourcePackPacket.Action.ACCEPTED));
+        List<ScheduledFuture<?>> tasks = Collections.synchronizedList(new ArrayList<>());
+        pendingPackTasks.put(id, tasks);
 
-        List<ScheduledFuture<?>> tasks = new ArrayList<>();
-
-        long downloadDelay = 180 + ThreadLocalRandom.current().nextInt(140);
+        long acceptDelay = 40 + ThreadLocalRandom.current().nextInt(60);
+        long downloadDelay = acceptDelay + 180 + ThreadLocalRandom.current().nextInt(140);
         long loadDelay = downloadDelay + 280 + ThreadLocalRandom.current().nextInt(240);
+
+        ScheduledFuture<?> acceptFuture = EXECUTOR.schedule(() -> {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc != null) {
+                mc.execute(() -> {
+                    if (connection.isConnected() && pendingPackTasks.containsKey(id)) {
+                        send(new ServerboundResourcePackPacket(id, ServerboundResourcePackPacket.Action.ACCEPTED));
+                    }
+                });
+            }
+        }, acceptDelay, TimeUnit.MILLISECONDS);
+        tasks.add(acceptFuture);
 
         ScheduledFuture<?> downloadFuture = EXECUTOR.schedule(() -> {
             Minecraft mc = Minecraft.getInstance();
@@ -96,7 +109,6 @@ public abstract class MixinClientCommonPacketListenerImpl {
         }, loadDelay, TimeUnit.MILLISECONDS);
         tasks.add(loadFuture);
 
-        pendingPackTasks.put(id, tasks);
         ci.cancel();
     }
 
@@ -119,8 +131,10 @@ public abstract class MixinClientCommonPacketListenerImpl {
     private void cancelPendingTasks(UUID id) {
         List<ScheduledFuture<?>> tasks = pendingPackTasks.remove(id);
         if (tasks != null) {
-            for (ScheduledFuture<?> task : tasks) {
-                task.cancel(false);
+            synchronized (tasks) {
+                for (ScheduledFuture<?> task : tasks) {
+                    task.cancel(false);
+                }
             }
         }
     }
@@ -128,8 +142,12 @@ public abstract class MixinClientCommonPacketListenerImpl {
     @Unique
     private void cancelAllPendingTasks() {
         for (List<ScheduledFuture<?>> tasks : pendingPackTasks.values()) {
-            for (ScheduledFuture<?> task : tasks) {
-                task.cancel(false);
+            if (tasks != null) {
+                synchronized (tasks) {
+                    for (ScheduledFuture<?> task : tasks) {
+                        task.cancel(false);
+                    }
+                }
             }
         }
         pendingPackTasks.clear();
